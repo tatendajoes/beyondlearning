@@ -7,7 +7,6 @@ class VideoCapture:
     def __init__(self, src=0):
         self.cap = cv.VideoCapture(src)
         self.fps = self.cap.get(cv.CAP_PROP_FPS)
-        self.fps = self.cap.get(cv.CAP_PROP_FPS)
         self.model = YOLO(r"models\best3.pt")
         self.labels = {0: 'focused',
                        1: 'unfocused'}
@@ -15,7 +14,7 @@ class VideoCapture:
                        'frame': [],
                        'timestamp': [],
                        'confidence': []}
-        self.frame_count = 0
+        self.frame_count = 1
         if not self.cap.isOpened():
             raise ValueError("Could not open video source")
 
@@ -41,11 +40,12 @@ class VideoCapture:
                     self.buffer['label'].append(self.labels[int(box[5])])
                     self.buffer['frame'].append(self.frame_count)
                     self.buffer['timestamp'].append(self.frame_count / self.fps)  # Calculate timestamp
-                    self.buffer['confidence'].append(box[4]) 
+                    self.buffer['confidence'].append(box[4])
+                    print(self.frame_count, self.fps)
+        self.frame_count += 1
         return frame
     def show(self, frame):
-        cv.imshow("Video", frame) 
-        self.frame_count += 1  # Increment frame count
+        cv.imshow("Video", frame)  
         return self.frame_count if self.frame_count else None
     def wait(self, delay=1):
         return cv.waitKey(delay) & 0xFF == ord('q')
