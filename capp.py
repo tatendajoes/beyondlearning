@@ -34,5 +34,6 @@ class App:
         self.metrics.plot_metrics()
         
 if __name__ == "__main__":
-    app = App(src=r'testvideos\vv2.mp4', show=True) 
+    app = App(src=r'testvideos\rec1.mp4', show=True) 
+    #app = App(src=0, show=True) 
     app.run()
