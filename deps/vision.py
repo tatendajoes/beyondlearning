@@ -1,6 +1,6 @@
 import cv2 as cv
 from ultralytics import YOLO
-from metrics import Metrics
+from deps.metrics import Metrics
 import pandas as pd
 import time as time
 class VideoCapture:
@@ -47,7 +47,11 @@ class VideoCapture:
     def show(self, frame):
         cv.imshow("Video", frame)  
         return self.frame_count if self.frame_count else None
+    def stop(self):
+        self.cap.release()
+        cv.destroyAllWindows()
     def wait(self, delay=1):
+        #return cv.waitKey(delay) & 0xFF == ord('q')
         return cv.waitKey(delay) & 0xFF == ord('q')
     
 #------------------------------------------------------------------------

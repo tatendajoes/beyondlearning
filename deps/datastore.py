@@ -8,7 +8,7 @@ import uuid, json
 # ---- DB class-------------------------------------------------------------------------
 
 class ClassRecord:
-    def __init__(self,db_url="sqlite:///records.db"):
+    def __init__(self,db_url="sqlite:///datastore/records.db"):
         self.engine  = create_engine(db_url, echo=False)
         self.metadata = MetaData()
         self.tables   = {}

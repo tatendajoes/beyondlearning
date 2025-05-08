@@ -3,11 +3,12 @@ from dash import dcc, html, dash_table, Input, Output, State
 import dash_bootstrap_components as dbc
 import dash_ag_grid as dag
 from dash_extensions.javascript import assign
+from flask_socketio import SocketIO
 import pandas as pd
-from datastore import ClassRecord
+from deps.datastore import ClassRecord
 from datetime import date, datetime
 
-database = ClassRecord('sqlite:///test1.db')
+database = ClassRecord('sqlite:///database.db')
 database.initialize_db()
 
 # -------------- Layout functions -------------------------------------------------
@@ -111,7 +112,14 @@ def page_sessions():
                                 ],
                                 placeholder="Select class",
                             ),
-                            dbc.Button("⏺ Start", id="save-session", color="danger"),
+                             dbc.Row([
+                            dbc.Col(
+                                dbc.Button("Start Record", id="record-toggle-btn", color="danger", className="me-2"),
+                                width="auto"
+                            ),
+                            dbc.Col(html.Div(id="record-status"), width="auto"),
+                        ], className="mb-3"),
+                            dbc.Button("Save", id="save-session", color="primary", disabled=True),
                             html.Small(id="s-msg", className="ms-3 text-success"),
                         ]
                     )
@@ -162,6 +170,8 @@ app = dash.Dash(
     ],
     suppress_callback_exceptions=True,
 )
+
+socketio = SocketIO(app.server, async_mode='eventlet', cors_allowed_origins="*")
 
 NAVBAR = dbc.NavbarSimple(
     brand="Beyond Learning",
@@ -271,8 +281,8 @@ def open_form(n):
     Output("s-msg", "children"),
     Output("sessions-grid", "rowData", allow_duplicate=True),
     Output("s-desc",  "value"),
-    Output("s-date",  "date",  allow_duplicate=True),   # ← add this
-    Output("s-start", "value", allow_duplicate=True),   # ← and this
+    Output("s-date",  "date",  allow_duplicate=True),  
+    Output("s-start", "value", allow_duplicate=True),   
     Output("s-end",   "value"),
     Output("s-att",   "value"),
     Output("s-class", "value"),
@@ -299,6 +309,26 @@ def save_session(n, desc, d, t_start, t_end, att, cid):
     df = database.fetch_all(2)
     return "✅ saved", df.to_dict("records"), "", None, None, None, None, None
 
+is_recording = False
+@app.callback(
+    Output("record-status", "children"),
+    Output("record-toggle-btn", "children", allow_duplicate=True),
+    Output("save-session", "disabled", allow_duplicate=True),
+    Input("record-toggle-btn", "n_clicks"),
+    prevent_initial_call=True
+)
+def toggle(n):
+    global is_recording
+    if not is_recording:
+        socketio.emit('record', {'action': 'start'})
+        is_recording = True
+        return "⏺ Recording started", "Stop Record", False
+    else:
+        socketio.emit('record', {'action': 'stop'})
+        is_recording = False
+        return "⏹ Recording stopped" , "Start Record", True
+
 # ─── run ------------------------------------------------------------------------
 if __name__ == "__main__":
-    app.run(debug=False)
+    #app.run(debug=False)
+    socketio.run(app.server, host="0.0.0.0", port=8050, debug=True)
